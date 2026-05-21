@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="description" content="小红书文案违禁词检测工具——粘贴文案，一键检测，秒出结果。免费，无需注册。">
+  <title>绿灯笔记 - 小红书文案合规检测</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>&#9989;</text></svg>">
+</head>
+<body>
+  <div class="page">
+    <div class="container">
+      <header class="header">
+        <div class="logo">
+          <div class="logo-icon">&#10003;</div>
+          <span class="logo-text">绿灯笔记</span>
+        </div>
+        <p class="header-sub">发之前，先过一遍。词库版本 <span id="word-version">-</span> · 覆盖 <span id="word-count">0</span> 词</p>
+      </header>
+
+      <div class="textarea-wrap">
+        <textarea id="input-text" placeholder="把你的笔记文案粘贴到这里&#10;&#10;支持小红书、抖音、公众号等平台的文案检测" autofocus></textarea>
+      </div>
+
+      <button id="detect-btn" class="btn-detect">
+        <span class="spinner" id="btn-spinner"></span>
+        <span id="btn-text">一键检测</span>
+      </button>
+
+      <div class="counter">
+        <span id="counter-text">已检测 0 次 · 今日剩余 3 次</span>
+      </div>
+
+      <div class="result-area" id="result-area">
+        <div class="result-card" id="result-content"></div>
+        <div class="feedback" id="feedback">
+          <span class="feedback-text">有漏报或误报？</span>
+          <button class="feedback-btn" onclick="alert('感谢反馈！请私信小红书「绿灯笔记」告诉我们')">反馈词库问题</button>
+        </div>
+      </div>
+
+      <footer class="page-footer">
+        <span>绿灯笔记 · 免费使用 · 词库每周更新</span>
+        <br>
+        <span>反馈/建议 小红书搜 <a href="#">绿灯笔记</a></span>
+      </footer>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="js/detector.js"></script>
+  <script src="js/ui.js"></script>
+</body>
+</html>
