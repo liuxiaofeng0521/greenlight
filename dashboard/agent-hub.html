@@ -1,0 +1,549 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AgentHub — 一人公司指挥中心</title>
+<style>
+:root {
+  --bg: #0f172a; --surface: #1e293b; --border: #334155;
+  --text: #e2e8f0; --text2: #94a3b8; --text3: #64748b;
+  --accent: #38bdf8; --green: #10b981; --amber: #f59e0b; --red: #ef4444; --purple: #a78bfa;
+  --font: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body { font-family: var(--font); background: var(--bg); color: var(--text); min-height: 100vh; }
+.app { display: flex; height: 100vh; }
+
+/* Sidebar */
+.sidebar { width: 220px; background: #0c1524; padding: 20px 0; display: flex; flex-direction: column; flex-shrink: 0; }
+.side-logo { padding: 0 20px 20px; font-size: 20px; font-weight: 700; color: var(--accent); letter-spacing: -0.5px; }
+.side-nav { list-style: none; flex: 1; }
+.side-nav li { padding: 10px 20px; cursor: pointer; font-size: 14px; color: var(--text2); border-left: 3px solid transparent; transition: all 0.15s; display: flex; align-items: center; gap: 10px; }
+.side-nav li:hover { background: rgba(56,189,248,0.05); color: var(--text); }
+.side-nav li.active { background: rgba(56,189,248,0.08); color: var(--accent); border-left-color: var(--accent); }
+.side-stat { padding: 16px 20px; font-size: 12px; color: var(--text3); border-top: 1px solid var(--border); }
+
+/* Main */
+.main { flex: 1; overflow-y: auto; padding: 32px; }
+.page { display: none; }
+.page.active { display: block; }
+
+h1 { font-size: 26px; margin-bottom: 4px; }
+.subtitle { font-size: 14px; color: var(--text2); margin-bottom: 28px; }
+
+/* Cards */
+.cards { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 16px; margin-bottom: 32px; }
+.card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+.card h3 { font-size: 15px; margin-bottom: 8px; }
+.card p { font-size: 13px; color: var(--text2); line-height: 1.6; }
+.stat-row { display: flex; gap: 16px; margin-bottom: 24px; }
+.stat-box { flex: 1; background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px; text-align: center; }
+.stat-box .num { font-size: 32px; font-weight: 700; color: var(--accent); }
+.stat-box .label { font-size: 12px; color: var(--text2); margin-top: 4px; }
+
+/* Search + Filter */
+.toolbar { display: flex; gap: 12px; margin-bottom: 20px; flex-wrap: wrap; }
+.toolbar input { flex: 1; min-width: 200px; padding: 10px 14px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: var(--font); font-size: 14px; outline: none; }
+.toolbar input:focus { border-color: var(--accent); }
+.toolbar select { padding: 10px 14px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: var(--font); font-size: 14px; outline: none; }
+
+/* Agent List */
+.agent-list { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 10px; }
+.agent-item { background: var(--surface); border: 1px solid var(--border); border-radius: 8px; padding: 14px 16px; cursor: pointer; transition: all 0.15s; }
+.agent-item:hover { border-color: var(--accent); background: rgba(56,189,248,0.03); }
+.agent-item .name { font-size: 14px; font-weight: 600; }
+.agent-item .desc { font-size: 12px; color: var(--text2); margin-top: 4px; line-height: 1.5; }
+.agent-item .cat { display: inline-block; font-size: 10px; padding: 2px 8px; border-radius: 99px; margin-top: 6px; }
+.cat-strategy { background: rgba(167,139,250,0.15); color: var(--purple); }
+.cat-product { background: rgba(56,189,248,0.15); color: var(--accent); }
+.cat-design { background: rgba(245,158,11,0.15); color: var(--amber); }
+.cat-engineering { background: rgba(16,185,129,0.15); color: var(--green); }
+.cat-marketing { background: rgba(239,68,68,0.15); color: var(--red); }
+.cat-sales { background: rgba(56,189,248,0.12); color: #7dd3fc; }
+.cat-finance { background: rgba(16,185,129,0.12); color: #6ee7b7; }
+.cat-ops { background: rgba(148,163,184,0.15); color: var(--text2); }
+.cat-creative { background: rgba(245,158,11,0.12); color: #fbbf24; }
+
+/* Workflow */
+.wf-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(360px, 1fr)); gap: 16px; }
+.wf-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; }
+.wf-card h3 { font-size: 15px; margin-bottom: 12px; }
+.wf-steps { display: flex; flex-direction: column; gap: 8px; }
+.wf-step { display: flex; align-items: center; gap: 10px; padding: 8px 12px; background: var(--bg); border-radius: 6px; font-size: 13px; }
+.wf-step .step-num { width: 24px; height: 24px; border-radius: 50%; background: var(--accent); color: var(--bg); display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; }
+.wf-step .step-agent { color: var(--accent); font-weight: 500; min-width: 160px; }
+.wf-step .step-what { color: var(--text2); font-size: 12px; }
+
+/* Project Input */
+.input-area { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 20px; margin-bottom: 20px; }
+.input-area label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text2); }
+.input-area textarea { width: 100%; min-height: 100px; padding: 12px; background: var(--bg); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: var(--font); font-size: 14px; resize: vertical; outline: none; }
+.input-area textarea:focus { border-color: var(--accent); }
+.input-area .btn-row { display: flex; gap: 8px; margin-top: 12px; }
+.btn { padding: 10px 20px; border-radius: 8px; border: none; font-family: var(--font); font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.15s; }
+.btn-primary { background: var(--accent); color: var(--bg); }
+.btn-primary:hover { background: #7dd3fc; }
+.btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+.btn-outline:hover { border-color: var(--accent); }
+
+/* Output Panel */
+.output-panel { background: var(--surface); border: 1px solid var(--accent); border-radius: 12px; padding: 20px; margin-top: 20px; display: none; }
+.output-panel.show { display: block; }
+.output-panel h3 { color: var(--accent); font-size: 14px; margin-bottom: 12px; }
+
+/* Modal */
+.modal-overlay { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; justify-content: center; align-items: center; }
+.modal-overlay.show { display: flex; }
+.modal { background: var(--surface); border: 1px solid var(--border); border-radius: 16px; padding: 28px; max-width: 520px; width: 100%; max-height: 80vh; overflow-y: auto; }
+.modal h2 { font-size: 18px; margin-bottom: 12px; }
+.modal p { font-size: 13px; color: var(--text2); line-height: 1.7; margin-bottom: 8px; }
+.modal .close { float: right; background: none; border: none; color: var(--text2); font-size: 20px; cursor: pointer; }
+
+/* Toast */
+.toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%); background: var(--accent); color: var(--bg); padding: 10px 24px; border-radius: 99px; font-size: 13px; font-weight: 600; z-index: 200; opacity: 0; pointer-events: none; transition: opacity 0.3s; }
+.toast.show { opacity: 1; }
+
+@media (max-width: 768px) {
+  .sidebar { display: none; }
+  .main { padding: 20px; }
+  .cards { grid-template-columns: 1fr; }
+  .wf-grid { grid-template-columns: 1fr; }
+  .agent-list { grid-template-columns: 1fr; }
+}
+</style>
+</head>
+<body>
+<div class="app">
+<aside class="sidebar">
+  <div class="side-logo">AgentHub</div>
+  <ul class="side-nav">
+    <li class="active" data-page="dash"><span>&#9679;</span> 总控台</li>
+    <li data-page="agents"><span>&#9776;</span> Agent库（184）</li>
+    <li data-page="workflows"><span>&#9878;</span> 工作流</li>
+    <li data-page="project"><span>&#9998;</span> 项目输入</li>
+  </ul>
+  <div class="side-stat">184 Agents · 10 类别<br>16 条标准工作流</div>
+</aside>
+
+<main class="main" id="main-content"></main>
+</div>
+<div class="modal-overlay" id="modal-overlay"><div class="modal" id="modal"></div></div>
+<div class="toast" id="toast"></div>
+
+<script>
+// === 数据 ===
+const AGENTS = [
+  // 大脑与战略
+  {id:"agents-orchestrator",name:"总调度官",cat:"strategy",desc:"统筹调度所有Agent，分解复杂任务并分配执行。一人公司的CEO代理。"},
+  {id:"specialized-chief-of-staff",name:"参谋长",cat:"strategy",desc:"为创始人过滤噪音，管流程，确保决策落地。你的COO。"},
+  {id:"specialized-workflow-architect",name:"工作流架构师",cat:"strategy",desc:"设计完整工作流树——正常路径、分支条件、失败模式、恢复路径。"},
+  {id:"support-executive-summary-generator",name:"执行摘要专家",cat:"strategy",desc:"把复杂商业输入转化为C-suite级别决策摘要。麦肯锡SCQA框架。"},
+  {id:"zk-steward",name:"知识库管家",cat:"strategy",desc:"原子化笔记、知识连接、持续验证。Luhmann式Zettelkasten。"},
+  // 产品与创新
+  {id:"product-manager",name:"产品经理",cat:"product",desc:"写PRD、用户故事、功能优先级。从需求到roadmap。"},
+  {id:"product-trend-researcher",name:"趋势研究员",cat:"product",desc:"市场趋势、竞品分析、蓝海扫描。找方向和机会。"},
+  {id:"product-sprint-prioritizer",name:"冲刺规划师",cat:"product",desc:"敏捷冲刺规划、需求优先级排序、资源分配。"},
+  {id:"product-behavioral-nudge-engine",name:"行为助推器",cat:"product",desc:"用行为心理学优化产品交互，提高转化和留存。"},
+  {id:"product-feedback-synthesizer",name:"反馈聚合器",cat:"product",desc:"收集多渠道用户反馈，提炼为产品决策依据。"},
+  {id:"support-analytics-reporter",name:"数据报告师",cat:"product",desc:"数据分析、仪表盘构建、KPI追踪、商业洞察。"},
+  {id:"testing-tool-evaluator",name:"工具评估师",cat:"product",desc:"评估软件/工具是否适合业务需求。"},
+  // 设计与品牌
+  {id:"design-brand-guardian",name:"品牌守护者",cat:"design",desc:"品牌定位、命名、VI体系、文案风格。从无到有建品牌。"},
+  {id:"design-ui-designer",name:"UI设计师",cat:"design",desc:"界面视觉设计、组件库、像素级落地。"},
+  {id:"design-ux-architect",name:"UX架构师",cat:"design",desc:"交互流程、信息架构、用户路径设计。"},
+  {id:"design-ux-researcher",name:"UX研究员",cat:"design",desc:"用户行为分析、可用性测试、用户画像。"},
+  {id:"design-visual-storyteller",name:"视觉叙事师",cat:"design",desc:"品牌故事、视觉传达、信息可视化。"},
+  {id:"design-whimsy-injector",name:"趣味注入师",cat:"design",desc:"给产品加趣味性、记忆点、愉悦感。"},
+  {id:"design-image-prompt-engineer",name:"图像提示词师",cat:"design",desc:"AI图像生成的精准提示词工程。封面、配图。"},
+  {id:"design-inclusive-visuals-specialist",name:"包容视觉师",cat:"design",desc:"确保视觉内容多元包容、不产生偏见。"},
+  // 技术工程
+  {id:"engineering-software-architect",name:"软件架构师",cat:"engineering",desc:"技术选型、系统设计、domain-driven设计。"},
+  {id:"engineering-frontend-developer",name:"前端开发",cat:"engineering",desc:"React/Vue/Angular，现代Web技术。"},
+  {id:"engineering-backend-architect",name:"后端架构师",cat:"engineering",desc:"API设计、微服务、数据库架构。"},
+  {id:"engineering-rapid-prototyper",name:"快速原型师",cat:"engineering",desc:"MVP极速开发，POC验证。最快出可用版本。"},
+  {id:"engineering-mobile-app-builder",name:"移动端开发",cat:"engineering",desc:"iOS/Android原生、React Native/Flutter。"},
+  {id:"engineering-senior-developer",name:"高级开发",cat:"engineering",desc:"Laravel/Livewire/高级CSS/Three.js全栈。"},
+  {id:"engineering-code-reviewer",name:"代码审查",cat:"engineering",desc:"审查代码质量、安全性、可维护性，非风格偏好。"},
+  {id:"engineering-security-engineer",name:"安全工程师",cat:"engineering",desc:"威胁建模、漏洞检测、安全架构、渗透测试。"},
+  {id:"engineering-devops-automator",name:"DevOps自动化",cat:"engineering",desc:"CI/CD、部署流水线、云基础设施。"},
+  {id:"engineering-data-engineer",name:"数据工程师",cat:"engineering",desc:"数据管道、Lakehouse、ETL/ELT、Spark/dbt。"},
+  {id:"engineering-database-optimizer",name:"数据库优化师",cat:"engineering",desc:"Schema设计、查询优化、索引策略、调优。"},
+  {id:"engineering-ai-engineer",name:"AI工程师",cat:"engineering",desc:"ML模型开发、部署、集成。AI应用落地。"},
+  {id:"engineering-wechat-mini-program-developer",name:"小程序开发",cat:"engineering",desc:"微信小程序：WXML/WXSS/WXS、支付、订阅消息。"},
+  {id:"engineering-sre",name:"SRE工程师",cat:"engineering",desc:"SLO/SLI、错误预算、可观测性、混沌工程。"},
+  {id:"engineering-cms-developer",name:"CMS开发",cat:"engineering",desc:"Drupal/WordPress主题和插件开发。"},
+  {id:"engineering-technical-writer",name:"技术文档",cat:"engineering",desc:"开发者文档、API引用、README、教程。"},
+  {id:"engineering-git-workflow-master",name:"Git工作流",cat:"engineering",desc:"分支策略、rebase/merge、worktree、CI友好提交。"},
+  {id:"engineering-codebase-onboarding-engineer",name:"代码引导",cat:"engineering",desc:"帮助新人读懂代码库，追踪调用路径。"},
+  {id:"engineering-minimal-change-engineer",name:"极简变更",cat:"engineering",desc:"只修该修的，不搞重构雪崩。最小diff。"},
+  {id:"engineering-threat-detection-engineer",name:"威胁检测",cat:"engineering",desc:"SIEM规则、MITRE ATT&CK、威胁狩猎。"},
+  {id:"engineering-lsp-index-engineer",name:"LSP/索引",cat:"engineering",desc:"语言服务器协议，代码智能索引。"},
+  {id:"engineering-terminal-integration-specialist",name:"终端集成",cat:"engineering",desc:"终端仿真、文本渲染、SwiftTerm集成。"},
+  // 营销-国内
+  {id:"marketing-xiaohongshu-specialist",name:"小红书专家",cat:"marketing",desc:"小红书内容策略、选品、达人营销、社区运营。"},
+  {id:"marketing-douyin-strategist",name:"抖音策略师",cat:"marketing",desc:"抖音算法机制、爆款公式、直播电商、内容矩阵。"},
+  {id:"marketing-wechat-official-account",name:"公众号运营",cat:"marketing",desc:"公众号内容矩阵、订阅转化、多格式运营。"},
+  {id:"marketing-zhihu-strategist",name:"知乎策略师",cat:"marketing",desc:"知乎问答、专栏、品牌专业信任建设。"},
+  {id:"marketing-bilibili-content-strategist",name:"B站策略师",cat:"marketing",desc:"B站UP主增长、弹幕文化、品牌内容。"},
+  {id:"marketing-kuaishou-strategist",name:"快手策略师",cat:"marketing",desc:"快手老铁文化、下沉市场、直播电商。"},
+  {id:"marketing-weibo-strategist",name:"微博策略师",cat:"marketing",desc:"微博话题运营、热搜机制、粉丝经济。"},
+  {id:"marketing-podcast-strategist",name:"播客策略师",cat:"marketing",desc:"小宇宙/喜马拉雅播客内容策略。"},
+  {id:"marketing-private-domain-operator",name:"私域运营",cat:"marketing",desc:"企业微信SCRM、社群分层、用户生命周期。"},
+  {id:"marketing-short-video-editing-coach",name:"短视频剪辑",cat:"marketing",desc:"剪映/PR/达芬奇/FCPX全流程。"},
+  {id:"marketing-livestream-commerce-coach",name:"直播电商教练",cat:"marketing",desc:"直播间运营、话术设计、排品、场控。"},
+  {id:"marketing-carousel-growth-engine",name:"图文轮播引擎",cat:"marketing",desc:"小红书/Instagram图文轮播，AI生成+发布。"},
+  {id:"marketing-agents-orchestrator",name:"营销Agent调度",cat:"marketing",desc:"调度所有营销Agent协同作战。"},
+  // 营销-海外
+  {id:"marketing-tiktok-strategist",name:"TikTok策略",cat:"marketing",desc:"TikTok内容、算法、广告、品牌增长。"},
+  {id:"marketing-instagram-curator",name:"Ins运营",cat:"marketing",desc:"Ins视觉策略、社区运营、Reels。"},
+  {id:"marketing-linkedin-content-creator",name:"LinkedIn内容",cat:"marketing",desc:"LinkedIn个人品牌、B2B内容、思想领导力。"},
+  {id:"marketing-twitter-engager",name:"Twitter运营",cat:"marketing",desc:"Twitter实时互动、thread写作、社区参与。"},
+  {id:"marketing-reddit-community-builder",name:"Reddit运营",cat:"marketing",desc:"Reddit社区建设、subreddit策略。"},
+  {id:"marketing-seo-specialist",name:"SEO专家",cat:"marketing",desc:"技术SEO、内容SEO、外链建设、自然搜索增长。"},
+  {id:"marketing-baidu-seo-specialist",name:"百度SEO",cat:"marketing",desc:"百度搜索优化、ICP合规、中文关键词。"},
+  {id:"marketing-ai-citation-strategist",name:"AI引用策略",cat:"marketing",desc:"优化在ChatGPT/Claude/Gemini等AI引用中的品牌可见度。"},
+  {id:"marketing-app-store-optimizer",name:"ASO优化",cat:"marketing",desc:"App Store/Google Play优化、关键词、转化率。"},
+  {id:"marketing-china-market-localization-strategist",name:"中国本地化",cat:"marketing",desc:"海外品牌进入中国的全案落地。"},
+  {id:"marketing-cross-border-ecommerce",name:"跨境电商",cat:"marketing",desc:"Amazon/Shopee/Lazada/Temu全链路。"},
+  {id:"marketing-video-optimization-specialist",name:"视频优化",cat:"marketing",desc:"YouTube算法、留存优化、缩略图、跨平台分发。"},
+  // 销售与变现
+  {id:"sales-outreach",name:"销售外展",cat:"sales",desc:"冷启动客户开拓、follow-up、异议处理、提案。"},
+  {id:"sales-account-strategist",name:"客户策略",cat:"sales",desc:"大客户管理、land-and-expand、QBR。"},
+  {id:"sales-deal-strategist",name:"交易策略",cat:"sales",desc:"MEDDPICC、竞争定位、赢单策略。"},
+  {id:"sales-discovery-coach",name:"需求挖掘",cat:"sales",desc:"销售需求调研、问题设计、差距量化。"},
+  {id:"sales-engineer",name:"售前工程师",cat:"sales",desc:"技术Demo、POC规划、竞品对比、产品价值传递。"},
+  {id:"sales-coach",name:"销售教练",cat:"sales",desc:"一线销售辅导、deal review、预测准确性。"},
+  {id:"sales-outbound-strategist",name:"外拓策略",cat:"sales",desc:"信号驱动外拓、多渠道序列设计、ICP定义。"},
+  {id:"sales-pipeline-analyst",name:"管道分析",cat:"sales",desc:"Pipeline健康度、deal速度、预测分析。"},
+  {id:"sales-proposal-strategist",name:"提案策略",cat:"sales",desc:"RFP响应、赢主题开发、提案叙事架构。"},
+  {id:"sales-data-extraction-agent",name:"销售数据提取",cat:"sales",desc:"监控Excel文件提取销售指标MTD/YTD。"},
+  {id:"report-distribution-agent",name:"报告分发",cat:"sales",desc:"按区域分发销售报告给对应销售代表。"},
+  // 金融与合规
+  {id:"finance-financial-analyst",name:"财务分析师",cat:"finance",desc:"财务建模、预测、场景分析、数据驱动决策。"},
+  {id:"finance-fpa-analyst",name:"FP&A分析师",cat:"finance",desc:"预算、差异分析、滚动预测、运营绩效。"},
+  {id:"finance-bookkeeper-controller",name:"记账与审计",cat:"finance",desc:"日常记账、月结、内控、GAAP合规。"},
+  {id:"finance-tax-strategist",name:"税务策略师",cat:"finance",desc:"税务优化、多管辖区合规、转让定价。"},
+  {id:"finance-investment-researcher",name:"投资研究员",cat:"finance",desc:"市场调研、尽职调查、估值分析、投资决策。"},
+  {id:"support-legal-compliance-checker",name:"合规检查",cat:"finance",desc:"跨国合规、数据保护、行业法规审查。"},
+  {id:"compliance-auditor",name:"合规审计",cat:"finance",desc:"SOC2/ISO27001/HIPAA/PCI-DSS审计。"},
+  {id:"legal-billing-time-tracking",name:"法律计费",cat:"finance",desc:"律所时间追踪、账单生成、收款管理。"},
+  {id:"legal-client-intake",name:"律所获客",cat:"finance",desc:"潜在客户筛选、案件信息搜集、冲突检查。"},
+  {id:"legal-document-review",name:"法律文件审阅",cat:"finance",desc:"合同/诉讼/地产文件审查、风险条款标注。"},
+  // 项目管理与运营
+  {id:"project-shepherd",name:"项目管家",cat:"ops",desc:"跨职能项目协调、时间线管理、干系人沟通。"},
+  {id:"project-manager-senior",name:"高级项目经理",cat:"ops",desc:"需求拆解→任务分配→进度追踪。"},
+  {id:"project-management-experiment-tracker",name:"实验追踪",cat:"ops",desc:"A/B测试、功能实验、假设验证。"},
+  {id:"project-management-jira-workflow-steward",name:"Jira管家",cat:"ops",desc:"Jira+Git工作流、可追溯提交、分支策略。"},
+  {id:"project-management-studio-operations",name:"工作室运营",cat:"ops",desc:"日常效率、流程优化、资源协调。"},
+  {id:"project-management-studio-producer",name:"工作室制作人",cat:"ops",desc:"高层创意与技术项目编排、多项目组合管理。"},
+  {id:"testing-workflow-optimizer",name:"工作流优化",cat:"ops",desc:"全业务职能流程分析、自动化瓶颈识别。"},
+  {id:"automation-governance-architect",name:"自动化治理",cat:"ops",desc:"业务自动化审计——价值、风险、可维护性。"},
+  {id:"data-consolidation-agent",name:"数据整合",cat:"ops",desc:"整合销售数据→实时仪表盘→区域摘要。"},
+  {id:"email-intelligence-engineer",name:"邮件情报",cat:"ops",desc:"从原始邮件中提取结构化数据供AI系统使用。"},
+  {id:"recruitment-specialist",name:"招聘专员",cat:"ops",desc:"招聘全流程、人才评估、劳动法合规。"},
+  {id:"corporate-training-designer",name:"培训设计师",cat:"ops",desc:"企业培训体系、课程开发、效果评估。"},
+  // 创意与内容
+  {id:"marketing-content-creator",name:"内容创作者",cat:"creative",desc:"多平台内容策略、编辑日历、品牌故事。"},
+  {id:"marketing-book-co-author",name:"写书伙伴",cat:"creative",desc:"将碎片转化为结构化的第一人称章节。"},
+  {id:"marketing-growth-hacker",name:"增长黑客",cat:"creative",desc:"数据驱动实验、病毒传播、转化漏斗优化。"},
+  {id:"marketing-social-media-strategist",name:"社媒策略",cat:"creative",desc:"跨平台社媒策略、社区运营、实时互动。"},
+  {id:"script-coach",name:"剧本教练",cat:"creative",desc:"短视频/广告/短剧编剧指导。"},
+  {id:"narrative-designer",name:"叙事设计师",cat:"creative",desc:"故事系统与对话架构，覆盖所有游戏引擎。"},
+  {id:"academic-narratologist",name:"叙事学专家",cat:"creative",desc:"叙事理论、故事结构、人物弧线分析。"},
+  {id:"academic-psychologist",name:"心理学家",cat:"creative",desc:"人物动机、人格理论、行为建模。"},
+  {id:"game-designer",name:"游戏设计师",cat:"creative",desc:"系统与机制架构、GDD、玩家心理、经济平衡。"},
+  {id:"specialized-cultural-intelligence-strategist",name:"文化智能",cat:"creative",desc:"跨文化内容适配，确保全球受众不踩红线。"},
+  // 测试与质量
+  {id:"testing-accessibility-auditor",name:"无障碍审计",cat:"engineering",desc:"WCAG合规、屏幕阅读器测试、包容性设计。"},
+  {id:"testing-api-tester",name:"API测试",cat:"engineering",desc:"API验证、性能测试、集成测试。"},
+  {id:"testing-performance-benchmarker",name:"性能基准",cat:"engineering",desc:"性能测量、优化、压测。"},
+  {id:"testing-evidence-collector",name:"证据收集",cat:"engineering",desc:"截图驱动的QA，默认找3-5个问题。"},
+  {id:"testing-reality-checker",name:"现实核查",cat:"engineering",desc:"拒绝假通过，需要压倒性证据才给绿灯。"},
+  {id:"testing-test-results-analyzer",name:"测试分析",cat:"engineering",desc:"综合测试结果分析、质量指标、可执行洞察。"},
+  {id:"specialized-model-qa",name:"模型QA",cat:"engineering",desc:"ML/统计模型审计——文档、数据重构、复现、校准。"},
+  // 专业领域
+  {id:"government-digital-presales-consultant",name:"政务售前",cat:"strategy",desc:"中国ToG数字化项目售前——政策解读、方案设计、投标。"},
+  {id:"healthcare-customer-service",name:"医疗客服",cat:"strategy",desc:"患者支持、账单咨询、预约管理、投诉处理。"},
+  {id:"healthcare-marketing-compliance",name:"医疗营销合规",cat:"strategy",desc:"中国医疗广告法、药械合规、内容审查。"},
+  {id:"supply-chain-strategist",name:"供应链策略",cat:"strategy",desc:"采购、供应商开发、质量控制、数字化。"},
+  {id:"specialized-salesforce-architect",name:"Salesforce架构",cat:"engineering",desc:"Salesforce多云架构、集成、治理、部署。"},
+  {id:"identity-graph-operator",name:"身份图谱",cat:"engineering",desc:"多Agent共享身份解析，保证'这个实体是谁'的一致性。"},
+  {id:"specialized-mcp-builder",name:"MCP开发",cat:"engineering",desc:"构建Model Context Protocol服务器，扩展AI能力。"},
+  {id:"language-translator",name:"翻译官",cat:"creative",desc:"实时中西互译，文化语境适配，商务/日常/应急。"},
+  {id:"hospitality-guest-services",name:"酒店客服",cat:"ops",desc:"酒店/度假村全流程客户服务。"},
+  {id:"hr-onboarding",name:"HR入职",cat:"ops",desc:"员工入职全流程——文档、合规、福利、文化融入。"},
+];
+
+const CATEGORIES = [
+  {key:"all",label:"全部",color:""},
+  {key:"strategy",label:"大脑与战略",color:"cat-strategy"},
+  {key:"product",label:"产品与创新",color:"cat-product"},
+  {key:"design",label:"设计与品牌",color:"cat-design"},
+  {key:"engineering",label:"技术工程",color:"cat-engineering"},
+  {key:"marketing",label:"营销获客",color:"cat-marketing"},
+  {key:"sales",label:"销售变现",color:"cat-sales"},
+  {key:"finance",label:"金融合规",color:"cat-finance"},
+  {key:"ops",label:"运营管理",color:"cat-ops"},
+  {key:"creative",label:"创意内容",color:"cat-creative"},
+];
+
+const WORKFLOWS = [
+  {
+    id:"wf-new-project", name:"新项目验证流水线", icon:"🔍",
+    desc:"拿到一个新方向→扫描需求→验证市场→竞品分析→可行性结论。标准4步。",
+    steps:[
+      {agent:"趋势研究员",what:"扫描需求信号：谁在搜、谁在抱怨、谁在付费"},
+      {agent:"投资研究员",what:"验证市场：多少人做、做得怎么样、新人能进吗"},
+      {agent:"产品经理",what:"竞品分析：差异化定位、功能对比、定价策略"},
+      {agent:"执行摘要专家",what:"输出结论：一句话定位+市场空间+入场建议+风险"},
+    ]
+  },
+  {
+    id:"wf-content", name:"内容冷启动流水线", icon:"📱",
+    desc:"选定平台→内容策略→选题库→批量生产→发布优化。全链路。",
+    steps:[
+      {agent:"抖音策略师/小红书专家（按平台选）",what:"定内容策略：人设、选题方向、发布节奏"},
+      {agent:"内容创作者",what:"批量产出：10个选题+3篇首发文案+封面方向"},
+      {agent:"品牌守护者",what:"视觉统一：配色、字体、封面模板"},
+      {agent:"数据分析师",what:"发布后48h数据回顾：完播率、互动率、改进建议"},
+    ]
+  },
+  {
+    id:"wf-brand", name:"品牌从0到1", icon:"🎨",
+    desc:"命名→定位→VI→文案风格→落地页。建品牌的完整流水线。",
+    steps:[
+      {agent:"趋势研究员",what:"扫描目标赛道现有品牌命名和定位"},
+      {agent:"品牌守护者",what:"出命名方案+品牌主张+品牌人格+视觉方向"},
+      {agent:"UI设计师",what:"出设计规范：配色、字体、组件、状态矩阵"},
+      {agent:"UX架构师",what:"出交互流程：用户路径、信息架构"},
+      {agent:"快速原型师",what:"出MVP落地页：一个HTML上线"},
+    ]
+  },
+  {
+    id:"wf-product", name:"产品从0到MVP", icon:"🚀",
+    desc:"PRD→架构→开发→部署→测试。把想法变成能用的产品。",
+    steps:[
+      {agent:"产品经理",what:"写PRD：核心功能、MVP范围、用户故事、成功指标"},
+      {agent:"软件架构师",what:"技术选型+架构设计+部署方案"},
+      {agent:"UI设计师",what:"界面设计规范：移动优先、状态全覆盖"},
+      {agent:"快速原型师",what:"写MVP代码：零依赖、最小可用"},
+      {agent:"代码审查",what:"检查质量：安全、性能、可维护性"},
+      {agent:"DevOps自动化",what:"部署上线：CI/CD、域名、HTTPS"},
+    ]
+  },
+  {
+    id:"wf-douyin", name:"抖音从0到1建号", icon:"🎬",
+    desc:"对标学习→内容策略→表达方式→标签→发布SOP。专门给抖音。",
+    steps:[
+      {agent:"抖音策略师",what:"扫描对标账号→拆解爆款公式→表达方式诊断"},
+      {agent:"内容创作者",what:"重写脚本：第一人称独白+钩子+金句收尾"},
+      {agent:"短视频剪辑",what:"剪辑指导：节奏、BGM、字幕、转场"},
+      {agent:"抖音策略师",what:"发布SOP：时间、标签、置顶评论、前10条回复"},
+    ]
+  },
+  {
+    id:"wf-xhs", name:"小红书图文冷启动", icon:"📝",
+    desc:"选题库→文案→封面→发布→评论区运营。专门给小红书。",
+    steps:[
+      {agent:"小红书专家",what:"定人设+选题矩阵+发布时间+避坑指南"},
+      {agent:"内容创作者",what:"写笔记文案：多类型覆盖（共鸣/干货/测评/教程）"},
+      {agent:"图像提示词师",what:"出封面图AI提示词"},
+      {agent:"小红书专家",what:"评论区互动策略+转化漏斗设计"},
+    ]
+  },
+  {
+    id:"wf-weekly", name:"每周业务复盘", icon:"📊",
+    desc:"每周跑一次：回顾→分析→决策。一人公司的周会。",
+    steps:[
+      {agent:"数据分析师",what:"拉本周数据：流量、转化、收入、成本"},
+      {agent:"FP&A分析师",what:"财务健康检查：现金流、跑道、单位经济"},
+      {agent:"参谋长",what:"下周优先级排序：什么继续、什么停、什么调整"},
+      {agent:"执行摘要专家",what:"输出本周总结+下周计划（一页纸）"},
+    ]
+  },
+  {
+    id:"wf-verify", name:"市场验证快速扫描", icon:"🔎",
+    desc:"给一个方向→验证是否值得做。解决'扫描完没验证'的问题。",
+    steps:[
+      {agent:"趋势研究员",what:"扫描需求信号：搜索量、社交媒体讨论、付费信号"},
+      {agent:"投资研究员",what:"竞争格局：有多少人在做、头部是谁、他们的数据"},
+      {agent:"产品经理",what:"机会评估：市场饱和度、差异化空间、入场时机"},
+      {agent:"财务分析师",what:"单位经济模型：客单价、成本、盈亏平衡点"},
+      {agent:"执行摘要专家",what:"一页结论：做/不做+理由+如果做从哪切入"},
+    ]
+  }
+];
+
+// === 渲染 ===
+const main = document.getElementById('main-content');
+const modalOverlay = document.getElementById('modal-overlay');
+const modal = document.getElementById('modal');
+const toast = document.getElementById('toast');
+
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2000);
+}
+
+function showModal(title, content) {
+  modal.innerHTML = `<button class="close" onclick="closeModal()">&times;</button><h2>${title}</h2>${content}`;
+  modalOverlay.classList.add('show');
+}
+function closeModal() { modalOverlay.classList.remove('show'); }
+modalOverlay.addEventListener('click', e => { if (e.target === modalOverlay) closeModal(); });
+
+// Navigation
+document.querySelectorAll('.side-nav li').forEach(li => {
+  li.addEventListener('click', () => {
+    document.querySelectorAll('.side-nav li').forEach(l => l.classList.remove('active'));
+    li.classList.add('active');
+    const page = li.dataset.page;
+    if (page === 'dash') renderDash();
+    else if (page === 'agents') renderAgents();
+    else if (page === 'workflows') renderWorkflows();
+    else if (page === 'project') renderProject();
+  });
+});
+
+function renderDash() {
+  const catCount = new Set(AGENTS.map(a => a.cat)).size;
+  main.innerHTML = `
+    <h1>总控台</h1>
+    <p class="subtitle">184个Agent · ${catCount}个类别 · 16条标准工作流 · 已就绪</p>
+    <div class="stat-row">
+      <div class="stat-box"><div class="num">184</div><div class="label">Agents</div></div>
+      <div class="stat-box"><div class="num">${catCount}</div><div class="label">类别</div></div>
+      <div class="stat-box"><div class="num">${WORKFLOWS.length}</div><div class="label">工作流模板</div></div>
+      <div class="stat-box"><div class="num">2</div><div class="label">活跃项目</div></div>
+    </div>
+    <h2 style="font-size:18px;margin-bottom:12px;">活跃项目</h2>
+    <div class="cards">
+      <div class="card">
+        <h3>🟢 绿灯笔记</h3>
+        <p>小红书违禁词检测工具。MVP已上线 greenlight-cyan.vercel.app。词库102词。待Gitee实名认证开启国内部署。</p>
+      </div>
+      <div class="card">
+        <h3>🎬 未接来电·抖音系列</h3>
+        <p>7条60秒情感短故事。已全改为第一人称独白版。Day01待重录发布。</p>
+      </div>
+    </div>
+    <h2 style="font-size:18px;margin-bottom:12px;margin-top:20px;">快速启动</h2>
+    <div class="cards">
+      <div class="card" style="cursor:pointer" onclick="renderWorkflows()">
+        <h3>🔍 新项目验证</h3><p>输入一个方向，走验证流水线，输出做/不做的结论。</p>
+      </div>
+      <div class="card" style="cursor:pointer" onclick="renderProject()">
+        <h3>📝 项目输入</h3><p>描述你的项目，匹配最佳工作流，输出执行方案。</p>
+      </div>
+      <div class="card" style="cursor:pointer" onclick="renderAgents()">
+        <h3>👥 Agent库</h3><p>浏览184个Agent，按类别筛选，查看每个Agent的能力。</p>
+      </div>
+    </div>
+  `;
+}
+
+function renderAgents(filterCat = 'all', searchTerm = '') {
+  let filtered = AGENTS;
+  if (filterCat !== 'all') filtered = filtered.filter(a => a.cat === filterCat);
+  if (searchTerm) filtered = filtered.filter(a => a.name.includes(searchTerm) || a.desc.includes(searchTerm) || a.id.includes(searchTerm));
+
+  const catsHtml = CATEGORIES.map(c => `<option value="${c.key}" ${filterCat===c.key?'selected':''}>${c.label}</option>`).join('');
+
+  main.innerHTML = `
+    <h1>Agent库（184）</h1>
+    <p class="subtitle">按类别筛选，点击Agent查看详情</p>
+    <div class="toolbar">
+      <input type="text" id="search-input" placeholder="搜索Agent名称、描述..." value="${searchTerm}" oninput="renderAgents(document.getElementById('cat-select').value, this.value)">
+      <select id="cat-select" onchange="renderAgents(this.value, document.getElementById('search-input')?.value||'')">${catsHtml}</select>
+    </div>
+    <div style="font-size:13px;color:var(--text3);margin-bottom:12px;">显示 ${filtered.length} / ${AGENTS.length} 个Agent</div>
+    <div class="agent-list">
+      ${filtered.map(a => `
+        <div class="agent-item" onclick="showModal('${a.name}','<p><strong>ID:</strong> ${a.id}</p><p><strong>类别:</strong> ${CATEGORIES.find(c=>c.key===a.cat)?.label||a.cat}</p><p>${a.desc}</p><p style=\\'margin-top:10px;color:var(--accent)\\'>调用方式：在对话中说\\'调用${a.name}\\'或使用Agent工具，subagent_type=${a.id}</p>')">
+          <div class="name">${a.name}</div>
+          <div class="desc">${a.desc}</div>
+          <span class="cat ${CATEGORIES.find(c=>c.key===a.cat)?.color||''}">${CATEGORIES.find(c=>c.key===a.cat)?.label||a.cat}</span>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function renderWorkflows() {
+  main.innerHTML = `
+    <h1>工作流库</h1>
+    <p class="subtitle">每条工作流串联多个Agent，输入需求→自动走流水线→输出标准报告</p>
+    <div class="wf-grid">
+      ${WORKFLOWS.map(w => `
+        <div class="wf-card">
+          <h3>${w.icon} ${w.name}</h3>
+          <p style="font-size:13px;color:var(--text2);margin-bottom:12px;">${w.desc}</p>
+          <div class="wf-steps">
+            ${w.steps.map((s,i) => `
+              <div class="wf-step">
+                <span class="step-num">${i+1}</span>
+                <span class="step-agent">${s.agent}</span>
+                <span class="step-what">${s.what}</span>
+              </div>
+            `).join('')}
+          </div>
+          <div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);">
+            <button class="btn btn-outline" style="width:100%;font-size:12px;" onclick="useWorkflow('${w.id}')">使用此工作流</button>
+          </div>
+        </div>
+      `).join('')}
+    </div>
+  `;
+}
+
+function useWorkflow(wfId) {
+  const wf = WORKFLOWS.find(w => w.id === wfId);
+  if (!wf) return;
+  renderProject();
+  setTimeout(() => {
+    const ta = document.getElementById('project-input');
+    if (ta) ta.value = `使用「${wf.name}」工作流\n步骤：${wf.steps.map((s,i)=>`\n${i+1}. ${s.agent} → ${s.what}`).join('')}\n\n请描述你要分析的具体项目/方向：\n`;
+  }, 200);
+}
+
+function renderProject() {
+  main.innerHTML = `
+    <h1>项目输入</h1>
+    <p class="subtitle">描述你的需求，匹配最佳工作流。我（Claude）按照工作流逐一调用Agent，输出统一格式报告。</p>
+    <div class="input-area">
+      <label>你的需求描述</label>
+      <textarea id="project-input" placeholder="例如：&#10;1. 我想做一个面向银发族的老照片修复小程序，帮我验证一下市场。&#10;2. 我的抖音账号发了3条视频播放不过百，帮我诊断。&#10;3. 帮我从零设计一个品牌，做女性情感陪伴类产品。"></textarea>
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="submitProject()">提交需求</button>
+        <button class="btn btn-outline" onclick="renderWorkflows()">先看看有哪些工作流</button>
+      </div>
+    </div>
+    <div class="output-panel" id="output-panel">
+      <h3>📋 你会得到什么</h3>
+      <p style="font-size:13px;color:var(--text2);line-height:1.8;">
+        Claude 会按照你选择的工作流，<strong>逐一调用对应Agent</strong>，每个Agent产出一部分，最终拼成一份完整报告。<br><br>
+        ✅ <strong>不是"一个Agent回答"</strong>，而是多个Agent各司其职顺序产出<br>
+        ✅ 输出有统一格式：背景→分析→结论→下一步建议<br>
+        ✅ 每个结论都有Agent署名和数据来源<br>
+        ✅ 报告会保存到 <code>docs/项目名/</code> 目录下
+      </p>
+    </div>
+    <script>document.getElementById('output-panel').classList.add('show');</script>
+  `;
+}
+
+function submitProject() {
+  const text = document.getElementById('project-input')?.value?.trim();
+  if (!text) { showToast('请先描述你的需求'); return; }
+  showToast('✅ 需求已提交。请在对话中告诉Claude："执行项目输入"');
+  // 把内容复制到剪贴板
+  navigator.clipboard?.writeText(text);
+}
+
+// Init
+renderDash();
+</script>
+</body>
+</html>
